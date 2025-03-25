@@ -8,7 +8,11 @@ enum Op{
 }
 fn main()->Result<(),Box<dyn std::error::Error>>{
 	let op=std::env::args().nth(1).expect("The first argument is empty!");
-	let delta:i32=std::env::args().nth(2).expect("The second argument is empty!").parse().expect("The second argument must be unsigned integer!");
+	let delta:i32=std::env::args().nth(2).expect("The second argument is empty!").parse().expect("The second argument must be positive integer!");
+	if delta<=0{
+		eprintln!("The second argument should be positive!");
+		return Ok(());
+	}
 	let op=match op.as_str(){
 		"inc"=>{Op::Inc(delta)},
 		"dec"=>{Op::Dec(delta)},
