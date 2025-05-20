@@ -1,12 +1,39 @@
 use std::io::{BufRead,Write};
 const GAMMA:f64=2.2;
 const STEPS:i32=100;
+const MUTEX_STR:&str="/tmp/brightctl_mutex";
+#[allow(dead_code)]
+struct InterprocessMutex;
+#[allow(dead_code)]
+impl InterprocessMutex{
+	pub fn new()->Option<Self>{
+		match std::fs::File::create_new(MUTEX_STR){
+            Ok(_)=>Some(InterprocessMutex{}),
+            Err(_)=>None,
+        }
+	}
+}
+impl Drop for InterprocessMutex{
+	fn drop(&mut self){
+		println!("Cleanup...");
+		match std::fs::remove_file(MUTEX_STR){
+			Err(_)=>{
+				eprintln!("Error: Failed to remove {}",MUTEX_STR);
+			}
+			_=>{}
+		}
+	}
+}
 #[derive(Debug)]
 enum Op{
 	Inc(i32),
 	Dec(i32),
 }
 fn main()->Result<(),Box<dyn std::error::Error>>{
+    let Some(_mutex)=InterprocessMutex::new() else{
+        eprintln!("{} exists. Maybe there is another `brightctl` process running?",MUTEX_STR);
+        std::process::exit(1);
+    };
 	let op=std::env::args().nth(1).expect("The first argument is empty!");
 	let delta:i32=std::env::args().nth(2).expect("The second argument is empty!").parse().expect("The second argument must be positive integer!");
 	if delta<=0{
